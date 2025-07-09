@@ -1,43 +1,41 @@
 import streamlit as st
 import pandas as pd
-import joblib
 from catboost import CatBoostClassifier
 
-# Load saved components
+# Load model
 model = CatBoostClassifier()
 model.load_model("catboost_model.cbm")
-model_columns = joblib.load("model_columns.pkl")
-cat_features = joblib.load("cat_features.pkl")
 
-st.title("🎯 CSAT Score Prediction")
+# Load original dataset (for dropdown options)
+df = pd.read_csv("your_dataset.csv")  # Replace with your actual CSV file name
 
-# User inputs
-input_data = {
-    'Channel Name': st.selectbox("Channel Name", ["Phone", "Email", "Chat"]),
-    'Category': st.selectbox("Category", ["Billing", "Technical", "General"]),
-    'Sub Category': st.text_input("Sub Category"),
-    'Agent Name': st.text_input("Agent Name"),
-    'Supervisor': st.text_input("Supervisor"),
-    'Manager': st.text_input("Manager"),
-    'Tenure Bucket': st.selectbox("Tenure Bucket", ["<1 yr", "1-2 yrs", "2-5 yrs", "5+ yrs"]),
-    'Agent Shift': st.selectbox("Agent Shift", ["Morning", "Evening", "Night"]),
-    'Day': st.selectbox("Day", ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]),
-    'Week Type': st.selectbox("Week Type", ["Weekday", "Weekend"])
+st.title("CSAT Score Prediction")
+
+# Input fields
+channel_name = st.selectbox("Channel Name", df["Channel Name"].unique())
+category = st.selectbox("Category", df["Category"].unique())
+supervisor = st.selectbox("Supervisor", df["Supervisor"].unique())
+tenure_bucket = st.selectbox("Tenure Bucket", df["Tenure Bucket"].unique())
+agent_shift = st.selectbox("Agent Shift", df["Agent Shift"].unique())
+week_type = st.selectbox("Week Type", df["Week Type"].unique())
+response_time = st.slider("Response Time (mins)", min_value=0, max_value=200, value=10)
+
+# Prepare input dataframe
+input_dict = {
+    "Channel Name": [channel_name],
+    "Category": [category],
+    "Supervisor": [supervisor],
+    "Tenure Bucket": [tenure_bucket],
+    "Agent Shift": [agent_shift],
+    "Week Type": [week_type],
+    "Response Time": [response_time],
 }
 
-# Predict button
-if st.button("Predict CSAT Score"):
-    # Create input DataFrame
-    input_df = pd.DataFrame([input_data])
+input_df = pd.DataFrame(input_dict)
 
-    # Add missing numeric columns with default 0
-    for col in model_columns:
-        if col not in input_df.columns:
-            input_df[col] = 0
+# DEBUG: Show input to user
+st.write("🔍 Model Input DataFrame", input_df)
 
-    # Reorder columns to match training
-    input_df = input_df[model_columns]
-
-    # Predict with cat_features using column names
-    prediction = model.predict(input_df)[0]
-    st.success(f"✅ Predicted CSAT Score: **{int(prediction)}**")
+# Make prediction
+prediction = model.predict(input_df)[0]
+st.success(f"✅ Predicted CSAT Score: **{int(prediction)}**")
