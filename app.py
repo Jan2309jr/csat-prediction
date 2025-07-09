@@ -3,32 +3,41 @@ import pandas as pd
 import joblib
 from catboost import CatBoostClassifier
 
-# Load trained model
-model = joblib.load("catboost_best_model.pkl")
+# Load saved components
+model = CatBoostClassifier()
+model.load_model("catboost_model.cbm")
+model_columns = joblib.load("model_columns.pkl")
+cat_features = joblib.load("cat_features.pkl")
 
-# Define UI
-st.title("CSAT Score Predictor")
+st.title("🎯 CSAT Score Prediction")
 
-# Define input fields
-st.header("Enter Customer Chat Details")
+# User inputs
+input_data = {
+    'Channel Name': st.selectbox("Channel Name", ["Phone", "Email", "Chat"]),
+    'Category': st.selectbox("Category", ["Billing", "Technical", "General"]),
+    'Sub Category': st.text_input("Sub Category"),
+    'Agent Name': st.text_input("Agent Name"),
+    'Supervisor': st.text_input("Supervisor"),
+    'Manager': st.text_input("Manager"),
+    'Tenure Bucket': st.selectbox("Tenure Bucket", ["<1 yr", "1-2 yrs", "2-5 yrs", "5+ yrs"]),
+    'Agent Shift': st.selectbox("Agent Shift", ["Morning", "Evening", "Night"]),
+    'Day': st.selectbox("Day", ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]),
+    'Week Type': st.selectbox("Week Type", ["Weekday", "Weekend"])
+}
 
-channel = st.selectbox("Channel Name", ['Inbound', 'Outcall'])  # update based on your data
-category = st.selectbox("Category", ['Returns', 'Cancellation', 'Order Related'])  # update list
-sub_category = st.selectbox("Sub-Category", ['Reverse Pickup Enquiry', 'Not Needed'])  # update
-agent_shift = st.selectbox("Agent Shift", ['Morning', 'Evening', 'Night'])
-tenure = st.selectbox("Tenure Bucket", ['0-30', '31-60', '61-90', '>90', 'On Job Training'])
-response_time = st.number_input("Response Time (minutes)", min_value=0.0, format="%.2f")
-
-# Button to predict
+# Predict button
 if st.button("Predict CSAT Score"):
-    input_df = pd.DataFrame({
-        "Channel Name": [channel],
-        "Category": [category],
-        "Sub Category": [sub_category],
-        "Agent Shift": [agent_shift],
-        "Tenure Bucket": [tenure],
-        "Response Time": [response_time]
-    })
+    # Create input DataFrame
+    input_df = pd.DataFrame([input_data])
 
+    # Add missing numeric columns with default 0
+    for col in model_columns:
+        if col not in input_df.columns:
+            input_df[col] = 0
+
+    # Reorder columns to match training
+    input_df = input_df[model_columns]
+
+    # Predict with cat_features using column names
     prediction = model.predict(input_df)[0]
     st.success(f"✅ Predicted CSAT Score: **{int(prediction)}**")
