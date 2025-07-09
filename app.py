@@ -7,7 +7,7 @@ model = CatBoostClassifier()
 model.load_model("catboost_model.cbm")
 
 # Load original dataset (for dropdown options)
-df = pd.read_csv("your_dataset.csv")  # Replace with your actual CSV file name
+df = pd.read_csv("https://raw.githubusercontent.com/Jan2309jr/csat-prediction/refs/heads/main/Customer_support_data.csv")  # Replace with your actual CSV file name
 
 st.title("CSAT Score Prediction")
 
